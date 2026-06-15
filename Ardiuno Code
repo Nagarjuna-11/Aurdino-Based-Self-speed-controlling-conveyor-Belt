@@ -1,0 +1,127 @@
+#include "HX711.h"
+
+// -------- MOTOR --------
+#define ENA 6
+#define IN1 9
+#define IN2 7
+
+// -------- HX711 --------
+#define DOUT 3
+#define CLK 2
+HX711 scale;
+
+// -------- CURRENT SENSOR --------
+#define CURRENT_SENSOR A0
+
+float V = 12.0;
+float sensitivity = 0.185;
+
+// baseline full-speed power
+float baselinePower = 0;
+
+// ---------------- SETUP ----------------
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(ENA, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  scale.begin(DOUT, CLK);
+
+  delay(2000);
+
+  // -------- BASELINE CALIBRATION --------
+  Serial.println("Calibrating baseline power...");
+
+  float sum = 0;
+
+  for (int i = 0; i < 50; i++) {
+    analogWrite(ENA, 255);
+
+    int val = analogRead(CURRENT_SENSOR);
+    float voltage = val * (5.0 / 1023.0);
+    float current = (voltage - 2.5) / sensitivity;
+
+    if (abs(current) < 0.05) current = 0;
+
+    sum += V * abs(current);
+    delay(50);
+  }
+
+  baselinePower = sum / 50.0;
+
+  Serial.print("Baseline Power: ");
+  Serial.println(baselinePower);
+}
+
+// ---------------- CURRENT FILTER ----------------
+float getCurrent() {
+  float sum = 0;
+
+  for (int i = 0; i < 5; i++) {
+    int val = analogRead(CURRENT_SENSOR);
+    float voltage = val * (5.0 / 1023.0);
+    float current = (voltage - 2.5) / sensitivity;
+
+    if (abs(current) < 0.05) current = 0;
+
+    sum += abs(current);
+    delay(5);
+  }
+
+  return sum / 5.0;
+}
+
+// ---------------- PWM LOGIC ----------------
+int getPWM(long weight) {
+  if (weight < 260000) {
+    return 250;   // heavy load
+  }
+  else if (weight < 360000) {
+    return 235;   // medium load
+  }
+  else {
+    return 220;   // light load
+  }
+}
+
+// ---------------- LOOP ----------------
+void loop() {
+
+  long weight = scale.read();
+
+  // Motor direction fixed
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  // PWM control
+  int pwm = getPWM(weight);
+  analogWrite(ENA, pwm);
+
+  // Current + Power
+  float current = getCurrent();
+  float power = V * current;
+
+  // Power saved
+  float powerSaved = baselinePower - power;
+  if (powerSaved < 0.2) powerSaved = 0;
+
+  // -------- OUTPUT --------
+  Serial.print("Weight: ");
+  Serial.print(weight);
+
+  Serial.print(" | PWM: ");
+  Serial.print(pwm);
+
+  Serial.print(" | Power: ");
+  Serial.print(power);
+
+  Serial.print(" W | Power Saved: ");
+  Serial.println(powerSaved);
+
+  delay(300);
+}
