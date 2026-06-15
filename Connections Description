@@ -1,0 +1,102 @@
+1. Arduino UNO
+
+Function: Main controller
+
+Reads sensors
+Controls motor
+Sends data to Serial Monitor
+2. Motor Driver (L298N)
+
+Function: Drives DC motor using external power
+
+Connections:
+ENA → D6
+IN1 → D9
+IN2 → D7
+GND → Arduino GND + all grounds
+12V → Adapter + (through ACS712)
+OUT1 → Motor wire 1
+OUT2 → Motor wire 2
+Function:
+Controls motor speed (ENA PWM)
+Controls direction (IN1, IN2)
+Stops motor when IR detects object
+3. IR Sensor
+
+Function: Detects object on conveyor
+
+Connections:
+VCC → 5V
+GND → GND
+OUT → D13
+Function:
+Output changes when object is detected
+Used to stop/start motor
+4. Load Cell + HX711
+
+Function: Measures weight
+
+HX711 → Arduino:
+VCC → 5V
+GND → GND
+DT → D3
+SCK → D2
+Load Cell → HX711:
+Red → E+
+Black → E-
+White → A-
+Green → A+
+Function:
+Converts strain into digital weight values
+5. ACS712 Current Sensor
+
+Function: Measures motor current
+
+Connections:
+VCC → 5V
+GND → GND
+OUT → A0
+Power Path:
+Adapter + → ACS712 → L298N 12V
+Function:
+Detects current used by motor
+6. Power Supply (12V Adapter)
+
+Function: Powers motor only
+
+Connections:
+Red (+) → ACS712 → L298N 12V
+Black (−) → L298N GND
+7. Jumper Wires
+
+Function: Connect all components
+
+Used for:
+Signal connections (D2, D3, D6, D7, D9, D13, A0)
+Power (5V, GND)
+Communication between modules
+Important:
+Male-to-female jumper wires used
+All GND must be connected together
+COMMON GROUND (VERY IMPORTANT)
+
+Connect all GND together:
+
+Arduino GND
+L298N GND
+IR Sensor GND
+HX711 GND
+ACS712 GND
+Adapter negative
+Overall Working Flow
+
+Object placed → IR detects → Motor stops → Load cell measures weight → ACS712 measures current → Serial Monitor displays data
+
+Final Features
+Automatic object detection
+Motor control (ON/OFF)
+Weight measurement
+Current monitoring
+External motor power
+Full sensor integration
+Serial Monitor output
